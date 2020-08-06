@@ -8,4 +8,4 @@ Instructions:
 3. Load folder into dashboard to view.
 
 <br />
-![alt text](https://raw.githubusercontent.com/ezekieltan/ChargeDashboard/master/screenshot.png)
+![alt text](screenshot.png)
