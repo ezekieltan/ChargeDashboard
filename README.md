@@ -6,3 +6,6 @@ Instructions:
 1. Download app at https://play.google.com/store/apps/details?id=com.waterdaaan.chargemonitor and use phone normally
 2. Export CSV files to computer
 3. Load folder into dashboard to view.
+
+<br />
+![alt text](https://raw.githubusercontent.com/ezekieltan/ChargeDashboard/master/screenshot.png)
