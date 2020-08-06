@@ -1,0 +1,43 @@
+body
+{
+	font-family:'Open Sans', sans-serif;
+}
+
+.selectorDiv
+{
+	width:100%;
+	display: flex;
+	justify-content: center;
+}
+
+
+.textDiv
+{
+	height:48px;
+	align-items: center;	
+	display: flex;
+	padding-right: 5px;
+	padding-left: 5px;
+    font-size: 18px;
+}
+
+.Select-control
+{
+	height:48px;
+	border-radius:1px;
+}
+.Select-value, .Select-placeholder
+{
+    align-items: center;
+    display: flex;
+}
+
+button
+{
+	height:48px;
+	width:100px;
+	font-family:'Open Sans', sans-serif;
+    font-size: 14px;
+	padding-right: 10px;
+	padding-left: 10px;
+}
