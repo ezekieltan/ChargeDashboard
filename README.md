@@ -7,5 +7,4 @@ Instructions:
 2. Export CSV files to computer
 3. Load folder into dashboard to view.
 
-<br />
 ![alt text](screenshot.png)
