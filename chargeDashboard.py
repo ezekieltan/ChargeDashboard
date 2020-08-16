@@ -266,7 +266,7 @@ def generator(val):
     capacityList = subDf['capacity'].values.tolist()
     #print(capacityList)
     capacityRetString = 'Total used: ' + str(calculateRunningDecrease(capacityList)) + '%'
-    capacityPerDayRetString = 'Per day: ' + str(round(calculateRunningDecrease(capacityList)/noOfDays,2)) + '%'
+    capacityPerDayRetString = '(' + str(round(calculateRunningDecrease(capacityList)/noOfDays,2)) + '%' + ' × ' + str(round(noOfDays,2)) + ' days' + ')'
     return [{
         'data': [
             {'x': subDf['time'], 'y': subDf['capacity'], 'type': 'line', 'name': 'Capacity'},
