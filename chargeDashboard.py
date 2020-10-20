@@ -8,16 +8,19 @@ import dash_html_components as html
 import datetime
 import os
 import pandas as pd
+import numpy as np
 from lib_File_Reader import File_Reader
 
-def generateMarks(input):
+
+
+def generateMarks(input, style={}):
     ret = {}
     if isinstance(input, list):
         for x in input:
-            ret[x] = {'label': str(x)}
+            ret[x] = {'label': str(x),'style': style}
     elif isinstance(input, dict):
         for key, value in input.items():
-            ret[key] = {'label': str(value)}
+            ret[key] = {'label': str(value),'style': style}
     return ret
 
 def dateRange(startDate, endDate):
@@ -63,6 +66,8 @@ def calculateRunningDecrease(l):
             s = s + diff
     return s
 
+maxDayAverage = 14
+
 defaultDirectory = os.path.join(os.path.dirname(os.path.abspath(__file__)),'files')
 fileDirectory = defaultDirectory
 #fileDirectory = os.path.join(os.getcwd(),'files')
@@ -107,11 +112,18 @@ app.layout = html.Div(
                 html.Div("", className = 'textDiv', id='timestampRangeSliderFeedBackOutput'),
             ]
         ),
-        dcc.RangeSlider(id='ddInputTimestampRangeSlider'),
+        html.Div(style={'margin-bottom': '60px'},
+            children=[
+                dcc.RangeSlider(id='ddInputTimestampRangeSlider'),
+            ]
+        ),
+        
         dcc.Graph(id='ddOutputMainGraph',style={'height':'80vh'},),
-        dcc.Slider(id='ddInputAverageDaysSlider',min=1,max=7,step=1,value=3,
-			marks=generateMarks([1,2,3,4,5,6,7]),
-		),
+        dcc.Slider(id='ddInputAverageDaysSlider',min=1,max=maxDayAverage,step=1,value=1,
+                    marks=generateMarks(list(range(1,maxDayAverage+1))),
+                    
+                ),
+        
         dcc.Graph(id='ddOutputDayAverageGraph',style={'height':'80vh'},),
     ]
 )
@@ -220,7 +232,13 @@ def loadFile(folder, btn):
     dates = [x.replace(hour=0,minute=0,second=0,microsecond=0) for x in dates]
     fileReader.setProperty('dates', dates)
     dates = {int(x.timestamp()):x.strftime("%d/%m") for x in dates}
-    datesDict = generateMarks(dates)
+    datesDict = generateMarks(dates, {
+                    'margin-bottom': '0px',
+                    'margin-left': '0px',
+                    'margin-right': '0px',
+                    'writing-mode': 'vertical-lr',
+                    'text-orientation': 'sideways'
+                })
     return [minTimestamp, maxTimestamp, 1, [minTimestamp, maxTimestamp], datesDict]
 
 @app.callback(
@@ -284,6 +302,8 @@ def generator(val):
 
 @app.callback(
 	[
+		ddOutput('ddInputAverageDaysSlider', 'max'),
+		ddOutput('ddInputAverageDaysSlider', 'marks'),
 		ddOutput('ddOutputDayAverageGraph', 'figure'),
 	],
 	[
@@ -295,15 +315,20 @@ def avgGenerator(val, trigger):
     
     global fileReader
     if(fileReader is None or trigger is None or trigger == ''):
-        return [{'data': [],'layout': {}}]
+        return [1,generateMarks([]),{'data': [],'layout': {}}]
     masterDf = fileReader.getProperty('masterDf')
     global timeZone
     if(masterDf is None):
-        return [{'data': [],'layout': {}}]
+        return [1,generateMarks([]),{'data': [],'layout': {}}]
     xList = []
     yList = []
+    yStressList = []
+    yVarianceList = []
+    yCurrentList = []
     minDate = min(masterDf['time']).replace(hour=0,minute=0,second=0,microsecond=0).replace(tzinfo=timeZone)
     maxDate = max(masterDf['time']).replace(hour=0,minute=0,second=0,microsecond=0).replace(tzinfo=timeZone)
+    dates = dateRange(minDate, maxDate)
+    lengthOfDates = len(dates)
     curDate = minDate
     while True:
         one = curDate
@@ -313,21 +338,34 @@ def avgGenerator(val, trigger):
         subDf = masterDf.loc[(masterDf['time'] > one) & (masterDf['time'] <= two)]
         
         capacityList = subDf['capacity'].values.tolist()
+        currentList = subDf['current'].values.tolist()
         noOfDays = (max(subDf['time']).timestamp()-min(subDf['time']).timestamp())/86400
         avg = round(calculateRunningDecrease(capacityList)/noOfDays,2)
+        variance = np.var(capacityList)
+        avgCurrent = np.average(np.square(currentList))
         
         xList.append(curDate)
         yList.append(avg)
-        
+        yVarianceList.append(variance)
+        yCurrentList.append(avgCurrent)
         curDate = curDate + datetime.timedelta(days=1)
-    return [{
-        'data': [
-            {'x': xList, 'y': yList, 'type': 'line', 'name': 'Capacity'},
-        ],
-        'layout': {
-            'title': str(val) + ' Day Average'
+    yVarianceList = [100*float(i)/max(yVarianceList) for i in yVarianceList]
+    yCurrentList = [100*float(i)/max(yCurrentList) for i in yCurrentList]
+    
+    return [
+        max(min(lengthOfDates-2, maxDayAverage),1),
+        generateMarks(list(range(1,max(min(lengthOfDates-2, maxDayAverage),1)+1))),
+        {
+            'data': [
+                {'x': xList, 'y': yList, 'type': 'line', 'name': 'Capacity'},
+                {'x': xList, 'y': yVarianceList, 'type': 'line', 'name': 'Variance'},
+                {'x': xList, 'y': yCurrentList, 'type': 'line', 'name': 'Current'},
+            ],
+            'layout': {
+                'title': str(val) + ' Day Average'
+            }
         }
-    }]
+    ]
 if __name__ == '__main__':
     app.run_server(debug=True)
     
